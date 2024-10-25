@@ -1,12 +1,13 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from database import sessionLocal, engine, Base
 from sqlalchemy.orm import Session 
-from model import Article
-from typing  import List
+from model import Article 
+
+
+Base.metadata.create_all(bind= engine)
 
 app = FastAPI()
 
-Base.metadata.create_all(bind= engine)
 
 def get_db():
     db = sessionLocal()
@@ -16,76 +17,61 @@ def get_db():
         db.close()
 
 
-initial_articles = [
-    {"id" : 1, "title": "What is Fastapi: Chapter 1 [Introduction]", "content": "Introduction"},
-    {"id" : 2, "title": "What is Fastapi: Chapter 2 [Introduction]", "content": "Introduction"},
-    {"id" : 3, "title": "What is Fastapi: Chapter 3 [Introduction]", "content": "Introduction"},
-    {"id" : 4, "title": "What is Fastapi: Chapter 4 [Introduction]", "content": "Introduction"},
-    {"id" : 5, "title": "What is Fastapi: Chapter 5 [Introduction]", "content": "Introduction"},
-    {"id" : 6, "title": "What is Fastapi: Chapter 6 [Introduction]", "content": "Introduction"},
-    {"id" : 7, "title": "What is Fastapi: Chapter 7 [Introduction]", "content": "Introduction"},
-    {"id" : 8, "title": "What is Fastapi: Chapter 8 [Introduction]", "content": "Introduction"},
-    {"id" : 9, "title": "What is Fastapi: Chapter 9 [Introduction]", "content": "Introduction"},
-    {"id" : 10, "title": "What is Fastapi: Chapter 10 [Introduction]", "content": "Introduction"},
-    {"id" : 11, "title": "What is Fastapi: Chapter 11 [Introduction]", "content": "Introduction"},
-    {"id" : 12, "title": "What is Fastapi: Chapter 12 [Introduction]", "content": "Introduction"},
-    {"id" : 13, "title": "What is Fastapi: Chapter 13 [Introduction]", "content": "Introduction"},
-    {"id" : 14, "title": "What is Fastapi: Chapter 14 [Introduction]", "content": "Introduction"},
-    {"id" : 15, "title": "What is Fastapi: Chapter 15 [Introduction]", "content": "Introduction"},
-    {"id" : 16, "title": "What is Fastapi: Chapter 16 [Introduction]", "content": "Introduction"},
-    {"id" : 17, "title": "What is Fastapi: Chapter 17 [Introduction]", "content": "Introduction"},
-    {"id" : 18, "title": "What is Fastapi: Chapter 18 [Introduction]", "content": "Introduction"},
-]
-
-
-@app.on_event("add-articles")
-async def add_articles():
-    db = sessionLocal()
-    existing_articles = db.query()
-    for article in initial_articles:
-        db_articles = Article(**article)
-        db.add(db_articles)
-        db.commit()
-        db.refresh(db_articles)
-        return db_articles
-
-@app.post("/api/v1/articles/", response_model=Article)
-async def add_article(article : Article, db: Session = Depends(get_db)):
-    db.add(article)
+@app.post("/api/v1/articles/")
+async def create_article(id: int, tilte:str, db: Session = Depends(get_db)):
+    new_article = Article(id = id, tilte = tilte) 
+    db.add(new_article)
     db.commit()
-    db.refresh(article)
-    return article
-
-
-
-
-
-
-
+    db.refresh(new_article)
+    return {"id": new_article.id, "title": new_article.title}
 
 
 @app.get("/api/v1/articles")
-async def  get_articles():
-    articles =  [
-        {"id" : 1, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 2, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 3, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 4, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 5, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 6, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 7, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 7, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 8, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 9, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 10, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 11, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 12, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 13, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 14, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 15, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 16, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 17, "title": "What is Fastapi : Chapter 1 [introduction]"},
-        {"id" : 18, "title": "What is Fastapi : Chapter 1 [introduction]"},
+async def get_article( db : Session = Depends(get_db)):
+    articles = db.query(Article).all()
+    if not articles:
+        raise HTTPException(status_code=404, detail="No Article Found")
+    return [{"id" : article.id, "title": article.title,  } for article in articles]
 
-    ]
-    return articles
+
+
+
+
+# from fastapi import FastAPI, Depends, HTTPException
+# from database import sessionLocal, engine, Base
+# from sqlalchemy.orm import Session 
+# from model import Article
+
+
+
+
+# Base.metadata.create_all(bind=engine)
+
+# app = FastAPI()
+
+# def get_db():
+#     db = sessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
+
+# @app.post("/api/v1/articles/")
+# def create_article(id: int, title: str, db: Session = Depends(get_db)):
+#     existing_article = db.query(Article).filter(Article.id == id).first()
+#     if existing_article:
+#         raise HTTPException(status_code=400, detail="Article with this ID already exists.")
+
+#     new_article = Article(id=id, title=title)
+#     db.add(new_article)
+#     db.commit()
+#     db.refresh(new_article)
+#     return {"id": new_article.id, "title": new_article.title}
+
+# # Endpoint to read articles
+# @app.get("/api/v1/articles/")
+# def read_articles(db: Session = Depends(get_db)):
+#     articles = db.query(Article).all()
+#     return [{"id": article.id, "title": article.title} for article in articles]
+
+

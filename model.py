@@ -1,11 +1,9 @@
-# models.py
 from sqlalchemy import Column, Integer, String
-from database import Base, engine
+from database import Base
 
 class Article(Base):
     __tablename__ = 'articles'
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
-    content = Column(String)
+    id = Column(Integer, primary_key=True, index=True)  
+    title = Column(String, nullable=False)  
+    
 
-Base.metadata.create_all(bind=engine)
