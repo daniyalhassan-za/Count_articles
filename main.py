@@ -7,8 +7,6 @@ from model import Article , User
 Base.metadata.create_all(bind= engine)
 
 app = FastAPI()
-
-
 def get_db():
     db = sessionLocal()
     try:
@@ -26,7 +24,6 @@ def register_user( user_name: str, First_name: str, Last_name: str, Email: str, 
     db.refresh(new_user)
     return {"message" : "New User Registered Sucessfully"}
 
-
 @app.post("/api/v1/articles/")
 async def create_article( user_name : str, title:str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.user_name == user_name).first()
@@ -41,10 +38,6 @@ async def create_article( user_name : str, title:str, db: Session = Depends(get_
         return {"title": new_article.title}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-
-
 
 @app.get("/api/v1/articles")
 async def get_article( db : Session = Depends(get_db)):
